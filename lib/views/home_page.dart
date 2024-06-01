@@ -7,8 +7,44 @@ import 'package:real_estate/utils/app_colors.dart';
 import 'package:real_estate/views/dashboard.dart';
 import 'package:real_estate/views/search_screen.dart';
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<Offset> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    Future<void>.delayed(const Duration(milliseconds: 3000), () {
+      _controller.forward();
+    });
+
+    _controller = AnimationController(
+      duration: const Duration(seconds: 1),
+      vsync: this,
+    );
+
+    _animation = Tween<Offset>(
+      begin: const Offset(0, 1), // Start just below the screen
+      end: Offset.zero, // End at its original position
+    ).animate(CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeInOut,
+    ));
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -51,7 +87,10 @@ class HomePage extends StatelessWidget {
             ),
             Align(
               alignment: Alignment.bottomCenter,
-              child: _BottomNavigation(),
+              child: SlideTransition(
+                position: _animation,
+                child: _BottomNavigation(),
+              ),
             )
           ],
         ),

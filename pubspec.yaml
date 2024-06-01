@@ -38,6 +38,7 @@ dependencies:
   equatable: ^2.0.5
   flutter_bloc: ^8.1.5
   google_maps_flutter: ^2.6.1
+  delayed_widget: ^1.1.2
 
 dev_dependencies:
   flutter_test:
