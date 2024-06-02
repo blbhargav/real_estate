@@ -71,7 +71,7 @@ class _DashboardAppImageState extends State<DashboardAppImage>
           child: Row(
             children: [
               Expanded(
-                flex: (135 - _animation.value).toInt() -
+                flex: (136 - _animation.value).toInt() -
                     (widget.width != null ? 20 : 0),
                 child: Container(
                   height: 40,

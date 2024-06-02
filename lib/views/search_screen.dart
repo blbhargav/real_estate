@@ -1,31 +1,72 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:real_estate/utils/app_colors.dart';
 
-class SearchScreen extends StatefulWidget {
+import '../bloc/search/search_cubit.dart';
+import '../enums/search_option.dart';
+import '../widgets/search_menu_item_tile.dart';
+
+class SearchScreen extends StatelessWidget {
   const SearchScreen({super.key});
 
   @override
-  State<SearchScreen> createState() => _SearchScreenState();
+  Widget build(BuildContext context) {
+    return BlocProvider<SearchCubit>(
+      create: (context) => SearchCubit(),
+      child: const _SearchView(),
+    );
+  }
 }
 
-class _SearchScreenState extends State<SearchScreen> {
+class _SearchView extends StatefulWidget {
+  const _SearchView({super.key});
+
+  @override
+  State<_SearchView> createState() => _SearchScreenState();
+}
+
+class _SearchScreenState extends State<_SearchView> {
   final Completer<GoogleMapController> _controller =
       Completer<GoogleMapController>();
   String _mapStyle = '';
 
+  static const LatLng _center = LatLng(45.521563, -122.677433);
+
   static const CameraPosition _kGooglePlex = CameraPosition(
-    target: LatLng(37.42796133580664, -122.085749655962),
+    target: _center,
     zoom: 14.4746,
   );
 
-  static const CameraPosition _kLake = CameraPosition(
-    bearing: 192.8334901395799,
-    target: LatLng(37.43296265331129, -122.08832357078792),
-    tilt: 59.440717697143555,
-    zoom: 19.151926040649414,
-  );
+  final Set<Marker> _markers = {
+    const Marker(
+      markerId: MarkerId('marker_1'),
+      position: LatLng(45.521563, -122.677433),
+      infoWindow: InfoWindow(
+        title: 'First Marker',
+        snippet: 'This is the first marker',
+      ),
+    ),
+    const Marker(
+      markerId: MarkerId('marker_2'),
+      position: LatLng(45.531563, -122.677433),
+      infoWindow: InfoWindow(
+        title: 'Second Marker',
+        snippet: 'This is the second marker',
+      ),
+    ),
+    const Marker(
+      markerId: MarkerId('marker_3'),
+      position: LatLng(45.541563, -122.677433),
+      infoWindow: InfoWindow(
+        title: 'Third Marker',
+        snippet: 'This is the third marker',
+      ),
+    ),
+  };
+
   @override
   void initState() {
     super.initState();
@@ -42,7 +83,7 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: (){
+      onTap: () {
         FocusManager.instance.primaryFocus?.unfocus();
       },
       behavior: HitTestBehavior.translucent,
@@ -53,6 +94,7 @@ class _SearchScreenState extends State<SearchScreen> {
             initialCameraPosition: _kGooglePlex,
             mapToolbarEnabled: false,
             zoomControlsEnabled: false,
+            markers: _markers,
             onMapCreated: (GoogleMapController controller) {
               _controller.complete(controller);
               controller.setMapStyle(_mapStyle);
@@ -60,10 +102,12 @@ class _SearchScreenState extends State<SearchScreen> {
           ),
           Positioned(
             child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 15,horizontal: 24),
+              padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 24),
               child: Row(
                 children: [
-                  const Expanded(child: RoundedTextField(),),
+                  const Expanded(
+                    child: RoundedTextField(),
+                  ),
                   Container(
                     decoration: const BoxDecoration(
                       shape: BoxShape.circle,
@@ -93,18 +137,42 @@ class _SearchScreenState extends State<SearchScreen> {
               children: [
                 Column(
                   children: [
-                    Container(
-                      margin: const EdgeInsets.only(bottom: 10),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.grey.withOpacity(0.6),
-                      ),
-                      width: 60,
-                      height: 60,
-                      child: const Center(
-                        child: Icon(
-                          Icons.price_change,
-                          color: Colors.white,
+                    GestureDetector(
+                      onTapDown: (TapDownDetails details) {
+                        _showPopupMenu(details.globalPosition);
+                      },
+                      child: Container(
+                        margin: const EdgeInsets.only(bottom: 10),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.grey.withOpacity(0.6),
+                        ),
+                        width: 60,
+                        height: 60,
+                        child: Center(
+                          child: BlocBuilder<SearchCubit, SearchState>(
+                            builder: (context, state) {
+                              final IconData icon;
+                              switch (state.searchOption) {
+                                case SearchOption.cosyAreas:
+                                  icon = Icons.security;
+                                  break;
+                                case SearchOption.price:
+                                  icon = Icons.wallet;
+                                  break;
+                                case SearchOption.infrastructure:
+                                  icon = Icons.restore_from_trash_outlined;
+                                  break;
+                                case SearchOption.withoutAnyLayer:
+                                  icon = Icons.storage;
+                                  break;
+                              }
+                              return Icon(
+                                icon,
+                                color: Colors.white,
+                              );
+                            },
+                          ),
                         ),
                       ),
                     ),
@@ -158,7 +226,88 @@ class _SearchScreenState extends State<SearchScreen> {
       ),
     );
   }
+
+  void _showPopupMenu(Offset offset) async {
+    final selectedSearchOption = context.read<SearchCubit>().state.searchOption;
+
+    final RenderBox overlay =
+        Overlay.of(context).context.findRenderObject() as RenderBox;
+    const double menuHeight =
+        250; // Adjust this value based on the number of menu items
+    await showMenu(
+      context: context,
+      // position: RelativeRect.fromLTRB(left, top, left+1, top+1),
+      position: RelativeRect.fromRect(
+        Rect.fromLTWH(offset.dx, offset.dy - menuHeight, 80,
+            80), // Adjust position to show above
+        Offset.zero & overlay.size,
+      ),
+      popUpAnimationStyle: AnimationStyle(),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.all(
+          Radius.circular(20.0),
+        ),
+      ),
+      color: AppColors.popupMenuColor,
+      items: [
+        PopupMenuItem<String>(
+          onTap: () {
+            context
+                .read<SearchCubit>()
+                .update(searchOption: SearchOption.cosyAreas);
+          },
+          value: SearchOption.cosyAreas.name,
+          child: SearchMenuItemTile(
+            icon: Icons.security,
+            name: 'Cosy areas',
+            selected: selectedSearchOption == SearchOption.cosyAreas,
+          ),
+        ),
+        PopupMenuItem<String>(
+          onTap: () {
+            context
+                .read<SearchCubit>()
+                .update(searchOption: SearchOption.price);
+          },
+          value: SearchOption.price.name,
+          child: SearchMenuItemTile(
+            icon: Icons.wallet,
+            name: 'Price',
+            selected: selectedSearchOption == SearchOption.price,
+          ),
+        ),
+        PopupMenuItem<String>(
+          onTap: () {
+            context
+                .read<SearchCubit>()
+                .update(searchOption: SearchOption.infrastructure);
+          },
+          value: SearchOption.infrastructure.name,
+          child: SearchMenuItemTile(
+            icon: Icons.restore_from_trash_outlined,
+            name: 'Infrastructure',
+            selected: selectedSearchOption == SearchOption.infrastructure,
+          ),
+        ),
+        PopupMenuItem<String>(
+          onTap: () {
+            context
+                .read<SearchCubit>()
+                .update(searchOption: SearchOption.withoutAnyLayer);
+          },
+          value: SearchOption.withoutAnyLayer.name,
+          child: SearchMenuItemTile(
+            icon: Icons.storage,
+            name: 'Without any layer',
+            selected: selectedSearchOption == SearchOption.withoutAnyLayer,
+          ),
+        ),
+      ],
+      elevation: 8.0,
+    );
+  }
 }
+
 class RoundedTextField extends StatelessWidget {
   const RoundedTextField({super.key});
 
@@ -172,7 +321,8 @@ class RoundedTextField extends StatelessWidget {
         contentPadding: EdgeInsets.symmetric(vertical: 16.0, horizontal: 24.0),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.all(Radius.circular(30.0)),
-          borderSide: BorderSide.none, // Use BorderSide.none if you don't want a border line
+          borderSide: BorderSide
+              .none, // Use BorderSide.none if you don't want a border line
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.all(Radius.circular(30.0)),
