@@ -1,16 +1,9 @@
-# real_estate
+# Real Estate
 
-A new Flutter project for Real estate with animations
+A Flutter project for Real estate business with animations. Ref [Dribble: Real Estate](https://dribbble.com/shots/23780608-Real-Estate-App)
 
-## Getting Started
+## How to run code
 
-This project is a starting point for a Flutter application.
+Replace API key in Android manifest(android/app/src/main/AndroidManifest.xml), line number 35.
 
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Screen shots
