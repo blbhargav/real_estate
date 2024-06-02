@@ -22,7 +22,7 @@ class SearchScreen extends StatelessWidget {
 }
 
 class _SearchView extends StatefulWidget {
-  const _SearchView({super.key});
+  const _SearchView();
 
   @override
   State<_SearchView> createState() => _SearchScreenState();
@@ -32,6 +32,7 @@ class _SearchScreenState extends State<_SearchView> {
   final Completer<GoogleMapController> _controller =
       Completer<GoogleMapController>();
   String _mapStyle = '';
+  BitmapDescriptor? customMarkerIcon;
 
   static const LatLng _center = LatLng(45.521563, -122.677433);
 
